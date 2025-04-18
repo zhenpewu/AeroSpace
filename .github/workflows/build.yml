@@ -1,4 +1,4 @@
-name: Build
+ name: Build
 
 on:
   push:
@@ -7,8 +7,9 @@ on:
       - 'rr/**' # "rr" stands for "remote run"
   pull_request:
     branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * *' # every day at 00:00
+  # schedule:
+  #  - cron: '0 0 * * *' # every day at 00:00
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,16 +19,16 @@ jobs:
         # https://github.com/actions/runner-images/blob/main/images/macos/macos-13-Readme.md
         # https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md
         # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md
-        #
-        # Xcode versions:
-        # - https://en.wikipedia.org/wiki/Xcode
-        # - https://xcodereleases.com/?scope=release
-        os: [macos-13, macos-14, macos-15]
+        os: [macos-15]
     name: Build
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: .deps
+          key: ${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('script/install-dep.sh', 'Gemfile', '.bundle/config') }}
       - uses: nikitabobko/setup-swift@21e0b6448e6aa76937c51d4b172f6cba5e537cde # todo migrate to swiftly
         with:
           swift-version: '6.1.0'
@@ -52,3 +53,11 @@ jobs:
             ./build-release.sh --codesign-identity -
             ./install-from-sources.sh --dont-rebuild
           fi
+      - name: 'Tar files'
+        run: tar -cvf apps.tar /Applications/AeroSpace.app /opt/homebrew/Caskroom/aerospace-dev/latest/AeroSpace-v0.0.0-SNAPSHOT/bin
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: apps.tar  # Change this to the actual path of your build output file
