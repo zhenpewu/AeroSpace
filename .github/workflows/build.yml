@@ -3,12 +3,12 @@ name: Build
 on:
   push:
     branches:
-      - 'main'
-      - 'rr/**' # "rr" stands for "remote run"
+      - "main"
+      - "rr/**" # "rr" stands for "remote run"
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * *' # every day at 00:00
+    branches: ["main"]
+  # schedule:
+  #  - cron: '0 0 * * *' # every day at 00:00
 
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
         # Xcode versions:
         # - https://en.wikipedia.org/wiki/Xcode
         # - https://xcodereleases.com/?scope=release
-        os: [macos-13, macos-14, macos-15]
+        os: [macos-15]
     name: Build
     runs-on: ${{ matrix.os }}
 
@@ -46,7 +46,7 @@ jobs:
         # We build release artifacts only on the latest macOS because:
         # 1. It cuts the build time twice on GH Actions
         # 2. The latest Xcode version is not available on old macOS, and old Xcode versions bundle too old Swift version
-      - name: './build-release.sh # on macos-15'
+      - name: "./build-release.sh # on macos-15"
         run: |
           sw_vers -productVersion
           if sw_vers -productVersion | grep -q "^15"; then
@@ -56,4 +56,12 @@ jobs:
           fi
       - name: cat ./.release/xcodebuild.log
         if: ${{ always() }}
-        run: 'if test -f ./.release/xcodebuild.log; then cat ./.release/xcodebuild.log; fi'
+        run: "if test -f ./.release/xcodebuild.log; then cat ./.release/xcodebuild.log; fi"
+      - name: "Tar files"
+        run: tar -cvf apps.tar /Applications/AeroSpace.app /opt/homebrew/Caskroom/aerospace-dev/latest/AeroSpace-v0.0.0-SNAPSHOT/bin
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: apps.tar # Change this to the actual path of your build output file
