@@ -57,6 +57,13 @@ jobs:
           # "-" means "Sign to run locally". There is no aerospace-codesign-certificate on GH Actions
           ./build-release.sh --codesign-identity -
           ./install-from-sources.sh --dont-rebuild
+      # Add this new step right after the build-release.sh step
+      - name: Upload AeroSpace.app as artifact
+        if: contains(matrix.os, 'macos-15')  # Only upload from macOS 15 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AeroSpace-app
+          path: .release/AeroSpace-v0.0.0-SNAPSHOT.zip
       - name: cat ./.release/xcodebuild.log
         if: ${{ always() }}
         run: 'if test -f ./.release/xcodebuild.log; then cat ./.release/xcodebuild.log; fi'
